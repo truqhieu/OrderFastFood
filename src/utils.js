@@ -28,12 +28,20 @@ export const canOrder = (user) => !user || CAN_ORDER_ROLES.includes(user.role);
 export const HOME_BY_ROLE = { admin: '/admin', shipper: '/shipper', merchant: '/merchant', customer: '/' };
 
 export const ORDER_STATUS = {
-  pending: { label: 'Chờ quán xác nhận', color: '#f59e0b', icon: '🕐' },
-  preparing: { label: 'Quán đang chuẩn bị', color: '#8b5cf6', icon: '👨‍🍳' },
-  picking: { label: 'Tài xế đang đến quán', color: '#3b82f6', icon: '🛵' },
-  delivering: { label: 'Đang giao hàng', color: '#0891b2', icon: '🚀' },
-  completed: { label: 'Đã giao', color: '#16a34a', icon: '✅' },
-  cancelled: { label: 'Đã hủy', color: '#dc2626', icon: '❌' },
+  pending: { label: 'Chờ quán xác nhận', color: '#f59e0b' },
+  preparing: { label: 'Đang chuẩn bị · tìm tài xế', color: '#8b5cf6' },
+  picking: { label: 'Tài xế đang đến quán', color: '#3b82f6' },
+  delivering: { label: 'Đang giao hàng', color: '#0891b2' },
+  completed: { label: 'Đã giao', color: '#16a34a' },
+  cancelled: { label: 'Đã hủy', color: '#dc2626' },
+};
+
+export const STATUS_TOAST = {
+  preparing: 'Quán đã nhận đơn, đang tìm tài xế',
+  picking: 'Tài xế đang đến quán lấy món',
+  delivering: 'Tài xế đang giao đến bạn',
+  completed: 'Giao hàng thành công',
+  cancelled: 'Đơn hàng đã bị hủy',
 };
 
 export const STATUS_FLOW = ['pending', 'preparing', 'picking', 'delivering', 'completed'];

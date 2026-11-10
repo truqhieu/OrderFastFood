@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -13,10 +13,9 @@ import RouteMap from '../components/RouteMap.jsx';
 import VoucherTicket from '../components/VoucherTicket.jsx';
 import { CartChangedError, getMyVouchers, placeOrder } from '../services.js';
 import { deliveryDistance, MAX_DELIVERY_KM, shopPosition } from '../geo.js';
-import { calcShippingFee, calcTotals, canOrder, deliveryMinutes, evaluateVoucher, formatPrice, PAYMENT_METHODS } from '../utils.js';
+import { calcShippingFee, calcTotals, canOrder, deliveryMinutes, evaluateVoucher, formatPrice } from '../utils.js';
 
 const PHONE_REGEX = /^0\d{9}$/;
-const PAYMENT_ICONS = { cod: 'cash', ewallet: 'phone', banking: 'bank' };
 
 export default function Cart() {
   const { user } = useAuth();
@@ -29,14 +28,14 @@ export default function Cart() {
     customerName: user?.fullName || '',
     phone: user?.phone || '',
     note: '',
-    paymentMethod: 'cod',
   });
   const [myVouchers, setMyVouchers] = useState([]);
   const [selectedId, setSelectedId] = useState(0);
   const [showVouchers, setShowVouchers] = useState(false);
   const [picking, setPicking] = useState(false);
-  const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const phoneRef = useRef(null);
 
   useEffect(() => {
     if (user && canOrder(user)) getMyVouchers(user.id).then((list) => setMyVouchers(list.filter((m) => !m.used)));
@@ -85,17 +84,30 @@ export default function Cart() {
   }
 
   const totals = calcTotals({ subtotal, distanceKm, voucher: selected?.voucher, restaurantId: restaurant.id });
-  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  const set = (key) => (e) => {
+    setForm({ ...form, [key]: e.target.value });
+    if (key === 'phone') setPhoneError('');
+  };
   const eta = (store.prepTime || 10) + deliveryMinutes(distanceKm);
 
   const submit = async (e) => {
     e.preventDefault();
-    setError('');
+    setPhoneError('');
     if (!user) return navigate('/login', { state: { from: '/cart' } });
-    if (!canOrder(user)) return setError('Tài khoản này không thể đặt hàng. Hãy dùng tài khoản khách hàng.');
-    if (!form.customerName.trim()) return setError('Vui lòng nhập tên người nhận');
-    if (!PHONE_REGEX.test(form.phone.trim())) return setError('Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)');
-    if (tooFar) return setError(`Địa chỉ ngoài phạm vi giao hàng (tối đa ${MAX_DELIVERY_KM} km)`);
+    if (!canOrder(user)) return toast('Tài khoản này không thể đặt hàng. Hãy dùng tài khoản khách hàng.', 'error');
+    if (!form.customerName.trim()) return toast('Vui lòng nhập tên người nhận', 'error');
+    const phone = form.phone.trim();
+    if (!phone) {
+      setPhoneError('Vui lòng nhập số điện thoại');
+      phoneRef.current?.focus();
+      return;
+    }
+    if (!PHONE_REGEX.test(phone)) {
+      setPhoneError('Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)');
+      phoneRef.current?.focus();
+      return;
+    }
+    if (tooFar) return toast(`Địa chỉ ngoài phạm vi giao hàng (tối đa ${MAX_DELIVERY_KM} km)`, 'error');
 
     setSubmitting(true);
     try {
@@ -107,18 +119,18 @@ export default function Cart() {
         userVoucherId: selected?.id || 0,
       });
       clearCart();
-      toast('Đặt hàng thành công, đang chờ quán xác nhận');
+      toast('Đặt hàng thành công. Chờ quán xác nhận.');
       navigate(`/orders/${order.id}`, { replace: true });
     } catch (err) {
       if (err instanceof CartChangedError) replaceItems(err.syncedItems);
-      setError(err.message);
+      toast(err.message, 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form className="checkout" onSubmit={submit}>
+    <form className="checkout" onSubmit={submit} noValidate>
       <div className="checkout-title">
         <button type="button" className="icon-btn" onClick={() => navigate(-1)} aria-label="Quay lại"><Icon name="back" size={20} /></button>
         <h1>Thanh toán</h1>
@@ -144,8 +156,20 @@ export default function Cart() {
                 <input className="input" value={form.customerName} onChange={set('customerName')} placeholder="Họ tên" />
               </label>
               <label>
-                <span>Số điện thoại</span>
-                <input className="input" value={form.phone} onChange={set('phone')} placeholder="09xx xxx xxx" inputMode="tel" />
+                <span>Số điện thoại <span className="text-error">*</span></span>
+                <input
+                  ref={phoneRef}
+                  className={`input ${phoneError ? 'invalid' : ''}`}
+                  value={form.phone}
+                  onChange={set('phone')}
+                  placeholder="09xx xxx xxx"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  required
+                  aria-required="true"
+                  aria-invalid={!!phoneError}
+                />
+                {phoneError && <span className="field-error">{phoneError}</span>}
               </label>
             </div>
           </section>
@@ -190,14 +214,9 @@ export default function Cart() {
 
           <section className="panel">
             <h3 className="panel-title">Phương thức thanh toán</h3>
-            <div className="pay-options">
-              {Object.entries(PAYMENT_METHODS).map(([key, label]) => (
-                <label key={key} className={`pay-option ${form.paymentMethod === key ? 'checked' : ''}`}>
-                  <input type="radio" name="payment" value={key} checked={form.paymentMethod === key} onChange={set('paymentMethod')} />
-                  <Icon name={PAYMENT_ICONS[key]} size={18} />
-                  <span>{label}</span>
-                </label>
-              ))}
+            <div className="pay-option checked">
+              <Icon name="cash" size={18} />
+              <span>Tiền mặt khi nhận hàng</span>
             </div>
           </section>
 
@@ -238,7 +257,6 @@ export default function Cart() {
 
           <section className="panel">
             <OrderSummary totals={totals} distanceKm={distanceKm} />
-            {error && <div className="alert alert-error small">{error}</div>}
             <button className="btn btn-primary btn-block btn-lg" disabled={submitting || tooFar}>
               {!user ? 'Đăng nhập để đặt hàng' : submitting ? 'Đang đặt hàng...' : `Đặt đơn · ${formatPrice(totals.total)}`}
             </button>

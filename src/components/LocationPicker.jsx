@@ -2,19 +2,26 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import Icon from './Icon.jsx';
-import { deliveryDistance, getCurrentPosition, MAX_DELIVERY_KM, reverseGeocode, searchPlaces } from '../geo.js';
+import LeafletFix from './LeafletFix.jsx';
+import { deliveryDistance, getCurrentPosition, MAP_TILE, MAX_DELIVERY_KM, reverseGeocode, searchPlaces } from '../geo.js';
 
-function MapEvents({ onMoveStart, onMoveEnd }) {
+function MapBinder({ mapRef, onMoveStart, onMoveEnd }) {
   const map = useMapEvents({
     movestart: onMoveStart,
     moveend: () => onMoveEnd(map.getCenter()),
   });
-  return null;
+  useEffect(() => {
+    mapRef.current = map;
+    return () => {
+      if (mapRef.current === map) mapRef.current = null;
+    };
+  }, [map, mapRef]);
+  return <LeafletFix />;
 }
 
 /** Full-screen picker: drag the map under a fixed pin, search an address, or use the device location. */
 export default function LocationPicker({ initial, restaurant, onClose, onConfirm }) {
-  const [map, setMap] = useState(null);
+  const mapRef = useRef(null);
   const [center, setCenter] = useState({ lat: initial.lat, lng: initial.lng });
   const [address, setAddress] = useState(initial.address);
   const [detail, setDetail] = useState(initial.detail || '');
@@ -24,7 +31,13 @@ export default function LocationPicker({ initial, restaurant, onClose, onConfirm
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [message, setMessage] = useState('');
+  const [mapReady, setMapReady] = useState(false);
   const skipReverse = useRef(true);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMapReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   useEffect(() => {
     if (skipReverse.current) {
@@ -66,7 +79,7 @@ export default function LocationPicker({ initial, restaurant, onClose, onConfirm
     };
   }, [query]);
 
-  const flyTo = (lat, lng) => map?.flyTo([lat, lng], 17, { duration: 0.8 });
+  const flyTo = (lat, lng) => mapRef.current?.flyTo([lat, lng], 17, { duration: 0.8 });
 
   const choose = (place) => {
     skipReverse.current = true;
@@ -102,7 +115,7 @@ export default function LocationPicker({ initial, restaurant, onClose, onConfirm
         <div className="picker-search">
           <Icon name="search" size={16} className="muted" />
           <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm đường, toà nhà, địa điểm..." />
-          {query && <button type="button" className="icon-btn" onClick={() => setQuery('')}><Icon name="close" size={16} /></button>}
+          {query && <button type="button" className="icon-btn" onClick={() => setQuery('')} aria-label="Xóa tìm kiếm"><Icon name="close" size={16} /></button>}
           {(results.length > 0 || (searching && query.trim().length >= 3)) && (
             <div className="picker-results">
               {searching && results.length === 0 && <div className="muted small picker-result">Đang tìm...</div>}
@@ -117,12 +130,16 @@ export default function LocationPicker({ initial, restaurant, onClose, onConfirm
         </div>
 
         <div className="picker-map">
-          <MapContainer ref={setMap} center={[center.lat, center.lng]} zoom={17} zoomControl={false} style={{ height: '100%' }}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-            <MapEvents onMoveStart={() => setMoving(true)} onMoveEnd={(c) => { setMoving(false); setCenter({ lat: c.lat, lng: c.lng }); }} />
-          </MapContainer>
+          {mapReady && (
+            <MapContainer center={[initial.lat, initial.lng]} zoom={17} zoomControl={false}
+              style={{ height: '100%', width: '100%' }}>
+              <TileLayer url={MAP_TILE.url} attribution={MAP_TILE.attribution} />
+              <MapBinder mapRef={mapRef} onMoveStart={() => setMoving(true)}
+                onMoveEnd={(c) => { setMoving(false); setCenter({ lat: c.lat, lng: c.lng }); }} />
+            </MapContainer>
+          )}
           <div className={`center-pin ${moving ? 'lifted' : ''}`}><span /></div>
-          <button type="button" className="locate-btn" onClick={useMyLocation} title="Vị trí hiện tại">
+          <button type="button" className="locate-btn" onClick={useMyLocation} title="Vị trí hiện tại" aria-label="Vị trí hiện tại">
             <Icon name="locate" size={20} />
           </button>
         </div>

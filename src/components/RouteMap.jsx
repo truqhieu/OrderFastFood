@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import L from 'leaflet';
 import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet';
-import { fetchRoute, pointAlong } from '../geo.js';
+import LeafletFix from './LeafletFix.jsx';
+import { fetchRoute, MAP_TILE, pointAlong } from '../geo.js';
 
-const TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const ATTRIBUTION = '&copy; OpenStreetMap';
 const PICKUP_OFFSET = { lat: 0.006, lng: -0.007 };
 
 const markerIcon = (type, label) =>
@@ -20,6 +19,7 @@ const ICONS = { shop: markerIcon('shop', 'Q'), home: markerIcon('home', 'B') };
 function FitBounds({ bounds }) {
   const map = useMap();
   useEffect(() => {
+    map.invalidateSize({ animate: false });
     map.fitBounds(bounds, { padding: [30, 30] });
   }, [map, bounds]);
   return null;
@@ -52,10 +52,11 @@ export default function RouteMap({ from, to, shipper, height = 220, interactive 
   }
 
   return (
-    <MapContainer className="route-map" style={{ height }} bounds={bounds} boundsOptions={{ padding: [30, 30] }}
+    <MapContainer className="route-map" style={{ height, width: '100%' }} bounds={bounds} boundsOptions={{ padding: [30, 30] }}
       dragging={interactive} scrollWheelZoom={interactive} doubleClickZoom={interactive} zoomControl={interactive} touchZoom={interactive}>
+      <LeafletFix />
       <FitBounds bounds={bounds} />
-      <TileLayer url={TILE_URL} attribution={ATTRIBUTION} />
+      <TileLayer url={MAP_TILE.url} attribution={MAP_TILE.attribution} />
       <Polyline positions={path} pathOptions={{ color: '#ee4d2d', weight: 4, opacity: 0.85 }} />
       <Marker position={[from.lat, from.lng]} icon={ICONS.shop} />
       <Marker position={[to.lat, to.lng]} icon={ICONS.home} />

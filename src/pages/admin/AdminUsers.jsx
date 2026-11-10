@@ -9,7 +9,7 @@ import Stars from '../../components/Stars.jsx';
 import { ACTIVE_STATUSES, ROLES } from '../../utils.js';
 
 const EMPTY = {
-  fullName: '', email: '', phone: '', address: '', password: '123456', role: 'customer',
+  fullName: '', username: '', email: '', phone: '', address: '', password: '123456', role: 'customer',
   restaurantId: '', vehicle: '', plate: '',
 };
 
@@ -35,15 +35,22 @@ export default function AdminUsers() {
 
   const save = async (e) => {
     e.preventDefault();
+    const username = (form.username || '').trim().toLowerCase();
+    if (!/^[a-z0-9._]{3,20}$/.test(username)) return toast('Tài khoản gồm 3–20 ký tự: chữ thường, số, dấu chấm hoặc gạch dưới', 'error');
     const email = form.email.trim().toLowerCase();
-    const dup = await api.get(`/users?email=${encodeURIComponent(email)}`);
-    if (dup.some((u) => u.id !== form.id)) return toast('Email đã tồn tại', 'error');
+    const [dupUser, dupEmail] = await Promise.all([
+      api.get(`/users?username=${encodeURIComponent(username)}`),
+      api.get(`/users?email=${encodeURIComponent(email)}`),
+    ]);
+    if (dupUser.some((u) => u.id !== form.id)) return toast('Tên tài khoản đã tồn tại', 'error');
+    if (dupEmail.some((u) => u.id !== form.id)) return toast('Email đã tồn tại', 'error');
     if (form.role === 'merchant' && !form.restaurantId) return toast('Chọn quán cho chủ quán', 'error');
     if (form.password.length < 6) return toast('Mật khẩu tối thiểu 6 ký tự', 'error');
     if (form.id === me.id && form.role !== 'admin') return toast('Không thể tự hạ quyền admin của chính mình', 'error');
 
     const data = {
       fullName: form.fullName.trim(),
+      username,
       email,
       phone: form.phone.trim(),
       address: form.address.trim(),
@@ -142,10 +149,13 @@ export default function AdminUsers() {
               </div>
             )}
             <div className="row">
+              <label>Tài khoản<input className="input" required value={form.username || ''} onChange={set('username')} /></label>
               <label>Email<input className="input" type="email" required value={form.email} onChange={set('email')} /></label>
-              <label>SĐT<input className="input" required value={form.phone} onChange={set('phone')} /></label>
             </div>
-            <label>Địa chỉ<input className="input" value={form.address || ''} onChange={set('address')} /></label>
+            <div className="row">
+              <label>SĐT<input className="input" required value={form.phone} onChange={set('phone')} /></label>
+              <label>Địa chỉ<input className="input" value={form.address || ''} onChange={set('address')} /></label>
+            </div>
             <label>Mật khẩu {form.id && <span className="muted small">(sửa để đặt lại mật khẩu)</span>}
               <input className="input" required value={form.password} onChange={set('password')} />
             </label>
@@ -159,13 +169,13 @@ export default function AdminUsers() {
 
       <div className="card">
         <table className="table">
-          <thead><tr><th>#</th><th>Họ tên</th><th>Email / SĐT</th><th>Vai trò</th><th>Thông tin thêm</th><th>Trạng thái</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>Họ tên</th><th>Tài khoản</th><th>Vai trò</th><th>Thông tin thêm</th><th>Trạng thái</th><th></th></tr></thead>
           <tbody>
             {paged.data.map((u) => (
               <tr key={u.id} className={u.locked ? 'row-locked' : ''}>
                 <td>{u.id}</td>
                 <td>{u.fullName}{u.id === me.id && <span className="tag"> Bạn</span>}</td>
-                <td>{u.email}<div className="muted small">{u.phone}</div></td>
+                <td>{u.username || '—'}<div className="muted small">{u.email}</div></td>
                 <td><span className="tag">{ROLES[u.role]}</span></td>
                 <td className="small">
                   {u.role === 'shipper' && (

@@ -97,7 +97,7 @@ export async function placeOrder({ user, restaurantId, items, form, userVoucherI
     deliveryLat: form.lat,
     deliveryLng: form.lng,
     note: form.note.trim(),
-    paymentMethod: form.paymentMethod,
+    paymentMethod: 'cod',
     items: synced,
     ...totals,
     voucherCode: voucher?.code || '',
@@ -142,8 +142,14 @@ export async function cancelOrder(order, role, reason) {
 }
 
 export async function getActiveShipperOrder(shipperId) {
-  const list = await api.get(`/orders?shipperId=${shipperId}&status=picking&status=delivering`);
-  return list[0] || null;
+  const list = await api.get(`/orders?shipperId=${shipperId}`);
+  return list.find((o) => o.status === 'picking' || o.status === 'delivering') || null;
+}
+
+/** Unassigned jobs ready to claim — only after the shop has confirmed. */
+export async function getOpenDeliveryJobs() {
+  const preparing = await api.get('/orders?status=preparing&_sort=createdAt&_order=asc');
+  return preparing.filter((o) => !o.shipperId);
 }
 
 export async function acceptOrder(order, shipper) {
@@ -151,6 +157,7 @@ export async function acceptOrder(order, shipper) {
   if (await getActiveShipperOrder(shipper.id)) throw new Error('Bạn đang có đơn chưa hoàn thành');
   const fresh = await api.get(`/orders/${order.id}`);
   if (fresh.shipperId) throw new Error('Đơn đã có tài xế khác nhận');
+  if (fresh.status !== 'preparing') throw new Error('Quán chưa xác nhận đơn, chưa thể nhận giao');
   return transition(order.id, ['preparing'], 'picking', { shipperId: shipper.id, shipper: shipperSnapshot(shipper) });
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -12,9 +12,9 @@ import StatusBadge from '../components/StatusBadge.jsx';
 import Stars, { StarInput } from '../components/Stars.jsx';
 import TrackingMap from '../components/TrackingMap.jsx';
 import { cancelOrder, submitReview } from '../services.js';
-import { ACTIVE_STATUSES, formatDate, formatPrice, formatTime, ORDER_STATUS, PAYMENT_METHODS, STATUS_FLOW } from '../utils.js';
+import { ACTIVE_STATUSES, formatDate, formatPrice, formatTime, ORDER_STATUS, PAYMENT_METHODS, STATUS_FLOW, STATUS_TOAST } from '../utils.js';
 
-const POLL_MS = 5000;
+const POLL_MS = 2000;
 
 function ReviewForm({ order, onDone }) {
   const { user } = useAuth();
@@ -29,7 +29,7 @@ function ReviewForm({ order, onDone }) {
     setSaving(true);
     try {
       await submitReview(order, user, { rating, comment, shipperRating: order.shipperId ? shipperRating : 0 });
-      toast('Cảm ơn bạn đã đánh giá! ⭐');
+      toast('Cảm ơn bạn đã đánh giá');
       onDone();
     } catch (err) {
       toast(err.message, 'error');
@@ -62,6 +62,7 @@ export default function OrderDetail() {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
+  const prevStatus = useRef('');
 
   const load = useCallback(() => {
     api
@@ -71,12 +72,15 @@ export default function OrderDetail() {
           o.userId === user.id ||
           user.role === 'admin' ||
           (user.role === 'merchant' && user.restaurantId === o.restaurantId) ||
-          (user.role === 'shipper' && o.shipperId === user.id);
+          (user.role === 'shipper' && (o.shipperId === user.id || !o.shipperId));
         if (!allowed) throw new Error('Bạn không có quyền xem đơn này');
         setOrder(o);
       })
-      .catch((e) => setError(e.message));
-  }, [id, user]);
+      .catch((e) => {
+        setError(e.message);
+        toast(e.message, 'error');
+      });
+  }, [id, user, toast]);
 
   const isActive = order && ACTIVE_STATUSES.includes(order.status);
 
@@ -87,8 +91,25 @@ export default function OrderDetail() {
   useEffect(() => {
     if (!isActive) return;
     const timer = setInterval(load, POLL_MS);
-    return () => clearInterval(timer);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') load();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', load);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', load);
+    };
   }, [isActive, load]);
+
+  useEffect(() => {
+    if (!order || order.userId !== user.id) return;
+    if (prevStatus.current && prevStatus.current !== order.status && STATUS_TOAST[order.status]) {
+      toast(STATUS_TOAST[order.status]);
+    }
+    prevStatus.current = order.status;
+  }, [order, user.id, toast]);
 
   const cancel = async () => {
     if (!(await confirm({
@@ -127,7 +148,7 @@ export default function OrderDetail() {
     navigate('/cart');
   };
 
-  if (error) return <div className="alert alert-error">{error}</div>;
+  if (error && !order) return <p className="muted center">{error}</p>;
   if (!order) return <p className="muted center">Đang tải...</p>;
 
   const reachedAt = Object.fromEntries(order.history.map((h) => [h.status, h.at]));
@@ -146,14 +167,14 @@ export default function OrderDetail() {
       <div className="card">
         <TrackingMap order={order} />
         {order.status === 'cancelled' ? (
-          <div className="alert alert-error">
-            Đơn đã bị hủy lúc {formatDate(reachedAt.cancelled)}{order.cancelReason && <> — Lý do: {order.cancelReason}</>}
-          </div>
+          <p className="notice notice-error">
+            Đơn đã bị hủy lúc {formatDate(reachedAt.cancelled)}{order.cancelReason && <> — {order.cancelReason}</>}
+          </p>
         ) : (
           <div className="timeline">
             {STATUS_FLOW.map((s) => (
               <div key={s} className={`step ${reachedAt[s] ? 'done' : ''}`}>
-                <div className="dot">{ORDER_STATUS[s].icon}</div>
+                <div className="dot" />
                 <div className="step-label">{ORDER_STATUS[s].label}</div>
                 <div className="muted small">{reachedAt[s] ? formatTime(reachedAt[s]) : ''}</div>
               </div>
@@ -164,18 +185,18 @@ export default function OrderDetail() {
 
       {order.shipper && (
         <div className="card driver-card">
-          <div className="driver-avatar">🧑‍✈️</div>
+          <div className="driver-avatar letter">{order.shipper.fullName.charAt(0)}</div>
           <div className="driver-info">
             <strong>{order.shipper.fullName}</strong>
             <span className="muted small">{order.shipper.vehicle} · <b className="plate">{order.shipper.plate}</b></span>
             <Stars value={order.shipper.rating} />
           </div>
-          {isActive && <a href={`tel:${order.shipper.phone}`} className="btn btn-outline">📞 Gọi tài xế</a>}
+          {isActive && <a href={`tel:${order.shipper.phone}`} className="btn btn-outline">Gọi tài xế</a>}
         </div>
       )}
 
       {order.status === 'completed' && isOwner && !order.reviewed && <ReviewForm order={order} onDone={load} />}
-      {order.reviewed && <div className="alert alert-info">⭐ Bạn đã đánh giá đơn hàng này.</div>}
+      {order.reviewed && <p className="notice notice-muted">Bạn đã đánh giá đơn hàng này.</p>}
 
       <div className="two-col">
         <div className="card">
@@ -192,7 +213,7 @@ export default function OrderDetail() {
             </div>
           ))}
           <OrderSummary totals={order} distanceKm={order.distanceKm} />
-          {order.voucherCode && <p className="small text-success">🎟️ Đã dùng voucher {order.voucherCode}</p>}
+          {order.voucherCode && <p className="small text-success">Đã dùng voucher {order.voucherCode}</p>}
         </div>
 
         <div className="card">
@@ -205,7 +226,7 @@ export default function OrderDetail() {
           <div className="actions">
             {order.status === 'pending' && isOwner && <button className="btn btn-danger" onClick={cancel}>Hủy đơn</button>}
             {['completed', 'cancelled'].includes(order.status) && isOwner && (
-              <button className="btn btn-primary" onClick={reorder}>🔁 Đặt lại</button>
+              <button className="btn btn-primary" onClick={reorder}>Đặt lại</button>
             )}
           </div>
         </div>

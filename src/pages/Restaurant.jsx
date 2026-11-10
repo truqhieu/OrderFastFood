@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
@@ -19,6 +19,8 @@ import { canOrder, discountPercent, estimateMinutes, formatDate, formatPrice, is
 export default function Restaurant() {
   const { id } = useParams();
   const restaurantId = Number(id);
+  const [params] = useSearchParams();
+  const focusDishId = Number(params.get('dish')) || 0;
   const { user } = useAuth();
   const cart = useCart();
   const toast = useToast();
@@ -47,13 +49,23 @@ export default function Restaurant() {
         setFoods(f);
         setVouchers(v.filter((x) => !isExpired(x)));
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => {
+        toast(e.message, 'error');
+        setError(e.message);
+      });
   }, [restaurantId]);
 
   useEffect(() => {
     if (!user) return;
     api.get(`/userVouchers?userId=${user.id}`).then((list) => setClaimedIds(new Set(list.map((x) => x.voucherId))));
   }, [user]);
+
+  useEffect(() => {
+    if (!focusDishId || !foods.length) return;
+    const el = document.getElementById(`dish-${focusDishId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focusDishId, foods]);
 
   const sections = useMemo(() => {
     const kw = normalizeText(keyword);
@@ -67,7 +79,7 @@ export default function Restaurant() {
     return [...map.entries()];
   }, [foods, keyword]);
 
-  if (error) return <div className="alert alert-error">{error}</div>;
+  if (error && !restaurant) return <p className="muted center">{error}</p>;
   if (!restaurant) return <p className="muted center">Đang tải...</p>;
 
   const orderable = restaurant.isOpen && canOrder(user);
@@ -113,7 +125,7 @@ export default function Restaurant() {
         </div>
       </section>
 
-      {!restaurant.isOpen && <div className="alert alert-error">Quán hiện đã đóng cửa, bạn có thể xem thực đơn và quay lại sau.</div>}
+      {!restaurant.isOpen && <p className="notice notice-error">Quán đang đóng cửa. Bạn có thể xem thực đơn và quay lại sau.</p>}
 
       {vouchers.length > 0 && (
         <div className="ticket-row">
@@ -154,7 +166,7 @@ export default function Restaurant() {
                 {list.map((f) => {
                   const qty = cart.restaurant?.id === restaurantId ? cart.quantityOf(f.id) : 0;
                   return (
-                    <div key={f.id} className={`menu-item ${f.available ? '' : 'disabled'}`}>
+                    <div id={`dish-${f.id}`} className={`menu-item ${f.available ? '' : 'disabled'} ${focusDishId === f.id ? 'focus-dish' : ''}`}>
                       <FoodImage food={f} size="lg" />
                       <div className="menu-info">
                         <strong>{f.name}</strong>

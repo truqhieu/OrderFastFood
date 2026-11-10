@@ -3,6 +3,11 @@ const OSRM = 'https://router.project-osrm.org/route/v1/driving';
 const PHOTON = 'https://photon.komoot.io';
 const VIETNAM_BBOX = '102.1,8.4,109.6,23.4';
 
+export const MAP_TILE = {
+  url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+  attribution: 'Tiles &copy; Esri',
+};
+
 export const DEFAULT_LOCATION = { lat: 21.0287, lng: 105.8524, address: 'Hồ Hoàn Kiếm, Phường Hoàn Kiếm, Hà Nội' };
 export const MAX_DELIVERY_KM = 20;
 

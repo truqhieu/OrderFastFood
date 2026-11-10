@@ -1,15 +1,14 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import FoodImage from './FoodImage.jsx';
 import { discountPercent, formatPrice } from '../utils.js';
 
-/** Dish card used on the home page (flash sale, suggestions). */
-export default function FoodTile({ food, restaurant, onAdd, showSoldBar }) {
-  const navigate = useNavigate();
+/** Dish preview on home. Opens the restaurant — items are added from the shop menu only. */
+export default function FoodTile({ food, restaurant, showSoldBar }) {
   const off = discountPercent(food);
   const soldRatio = Math.min(95, 30 + (food.sold % 70));
 
   return (
-    <div className="food-tile" onClick={() => navigate(`/restaurants/${food.restaurantId}`)}>
+    <Link className="food-tile" to={`/restaurants/${food.restaurantId}?dish=${food.id}`}>
       <div className="food-tile-img">
         <FoodImage food={food} size="tile" />
         {off > 0 && <span className="off-badge">-{off}%</span>}
@@ -27,18 +26,8 @@ export default function FoodTile({ food, restaurant, onAdd, showSoldBar }) {
             <b className="price">{formatPrice(food.price)}</b>
             {off > 0 && <s className="muted small"> {formatPrice(food.originalPrice)}</s>}
           </span>
-          <button
-            className="add-btn"
-            title="Thêm vào giỏ"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAdd(food, restaurant);
-            }}
-          >
-            +
-          </button>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

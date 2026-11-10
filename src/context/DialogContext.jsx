@@ -3,7 +3,7 @@ import Icon from '../components/Icon.jsx';
 
 const DialogContext = createContext(null);
 
-const ICONS = { danger: 'trash', warning: 'alert', info: 'help', gift: 'gift' };
+const ICONS = { danger: 'alert', warning: 'alert', info: 'help', gift: 'gift' };
 
 /**
  * Promise-based replacements for window.confirm / window.prompt:
@@ -26,11 +26,12 @@ export function DialogProvider({ children }) {
   const prompt = useCallback((opts) => open('prompt', opts), [open]);
 
   const close = (result) => {
-    dialog.resolve(result);
+    dialog?.resolve(result);
     setDialog(null);
   };
-  const cancel = () => close(dialog.kind === 'prompt' ? null : false);
+  const cancel = () => close(dialog?.kind === 'prompt' ? null : false);
   const accept = () => {
+    if (!dialog) return;
     if (dialog.kind === 'prompt') {
       if (dialog.required && !value.trim()) return inputRef.current?.focus();
       close(value.trim());
@@ -40,10 +41,12 @@ export function DialogProvider({ children }) {
   useEffect(() => {
     if (!dialog) return;
     (dialog.kind === 'prompt' ? inputRef : okRef).current?.focus();
-    const onKey = (e) => e.key === 'Escape' && cancel();
+    const onKey = (e) => {
+      if (e.key === 'Escape') cancel();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+  }, [dialog]);
 
   const tone = dialog?.tone || (dialog?.danger ? 'danger' : 'info');
 
@@ -58,7 +61,9 @@ export function DialogProvider({ children }) {
             aria-modal="true"
             aria-labelledby="dialog-title"
             onSubmit={(e) => { e.preventDefault(); accept(); }}>
-            <div className={`dialog-icon dialog-${tone}`}><Icon name={ICONS[tone]} size={26} /></div>
+            <div className={`dialog-icon dialog-${tone}`}>
+              <Icon name={ICONS[tone] || 'help'} size={26} />
+            </div>
             <h3 id="dialog-title">{dialog.title || (dialog.kind === 'prompt' ? 'Nhập thông tin' : 'Xác nhận')}</h3>
             {dialog.message && <p className="dialog-message">{dialog.message}</p>}
             {dialog.kind === 'prompt' && (

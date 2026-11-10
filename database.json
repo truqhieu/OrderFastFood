@@ -3,6 +3,7 @@
     {
       "id": 1,
       "fullName": "Quản trị viên",
+      "username": "admin",
       "email": "admin@fastfood.vn",
       "password": "123456",
       "phone": "0900000000",
@@ -12,6 +13,7 @@
     {
       "id": 2,
       "fullName": "Nguyễn Văn A",
+      "username": "user",
       "email": "user@fastfood.vn",
       "password": "123456",
       "phone": "0911222333",
@@ -21,6 +23,7 @@
     {
       "id": 3,
       "fullName": "Trần Thị B",
+      "username": "user2",
       "email": "user2@fastfood.vn",
       "password": "123456",
       "phone": "0922333444",
@@ -30,6 +33,7 @@
     {
       "id": 4,
       "fullName": "Lê Văn Tài",
+      "username": "shipper",
       "email": "shipper@fastfood.vn",
       "password": "123456",
       "phone": "0933444555",
@@ -44,6 +48,7 @@
     {
       "id": 5,
       "fullName": "Phạm Minh Xế",
+      "username": "shipper2",
       "email": "shipper2@fastfood.vn",
       "password": "123456",
       "phone": "0944555666",
@@ -58,6 +63,7 @@
     {
       "id": 6,
       "fullName": "Chủ quán Ông Tư",
+      "username": "merchant",
       "email": "merchant@fastfood.vn",
       "password": "123456",
       "phone": "0955666777",
@@ -68,6 +74,7 @@
     {
       "id": 7,
       "fullName": "Chủ quán Burger House",
+      "username": "merchant2",
       "email": "merchant2@fastfood.vn",
       "password": "123456",
       "phone": "0966777888",
@@ -80,10 +87,35 @@
       "fullName": "Chủ quán Trà Sữa Mây",
       "phone": "0977888999",
       "restaurantId": 4,
+      "username": "tramay",
       "email": "tramay@fastfood.vn",
       "role": "merchant",
       "address": "34 Phố Hàng Buồm, Hoàn Kiếm, Hà Nội",
       "id": 8
+    },
+    {
+      "fullName": "Trần Trung Hiếu",
+      "username": "trunghieu2003hhh",
+      "email": "trunghieu2003hhh@gmail.com",
+      "phone": "",
+      "address": "",
+      "password": "",
+      "role": "customer",
+      "googleId": "106127333855160751579",
+      "avatar": "https://lh3.googleusercontent.com/a/ACg8ocI0mB3mYTroAEvHUB1fMxXVPxqQYYCqPYwtLIgSXjCF3b9hAA=s96-c",
+      "authProvider": "google",
+      "id": 9
+    },
+    {
+      "fullName": "Chủ quán Gà Nướng Mật Ong 79",
+      "username": "matong79",
+      "email": "matong79@fastfood.vn",
+      "password": "123456",
+      "phone": "0988123456",
+      "address": "68 Phố Nguyễn Thái Học, Cửa Nam, Hà Nội",
+      "role": "merchant",
+      "restaurantId": 12,
+      "id": 10
     }
   ],
   "categories": [
@@ -1161,7 +1193,7 @@
       "image": "/images/foods/brown-sugar-boba.jpg",
       "description": "Trân châu nấu đường đen mỗi ngày",
       "available": true,
-      "sold": 2100,
+      "sold": 2101,
       "originalPrice": 59000
     },
     {
@@ -1811,7 +1843,7 @@
       "image": "/images/foods/roast-chicken-leg.jpg",
       "description": "Quay vàng óng, sốt mật ong",
       "available": true,
-      "sold": 1410,
+      "sold": 1411,
       "originalPrice": 0
     },
     {
@@ -1824,7 +1856,7 @@
       "image": "/images/foods/fried-chicken.jpg",
       "description": "Phần 3 miếng cho 2 người",
       "available": true,
-      "sold": 2160,
+      "sold": 2161,
       "originalPrice": 133000
     },
     {
@@ -5037,7 +5069,7 @@
       "minOrder": 50000,
       "restaurantId": 0,
       "quantity": 1000,
-      "claimed": 120,
+      "claimed": 121,
       "expiresAt": "2026-12-31T23:59:59.000Z",
       "active": true
     },
@@ -5051,7 +5083,7 @@
       "minOrder": 100000,
       "restaurantId": 0,
       "quantity": 500,
-      "claimed": 48,
+      "claimed": 49,
       "expiresAt": "2026-12-31T23:59:59.000Z",
       "active": true
     },
@@ -5366,6 +5398,22 @@
       "orderId": 4,
       "claimedAt": "2026-11-02T16:10:25.035Z",
       "id": 2
+    },
+    {
+      "userId": 9,
+      "voucherId": 1,
+      "used": false,
+      "orderId": 0,
+      "claimedAt": "2026-11-10T02:22:41.055Z",
+      "id": 3
+    },
+    {
+      "userId": 9,
+      "voucherId": 2,
+      "used": true,
+      "orderId": 6,
+      "claimedAt": "2026-11-10T02:22:41.685Z",
+      "id": 4
     }
   ],
   "orders": [
@@ -5641,9 +5689,16 @@
       "total": 75000,
       "voucherCode": "",
       "userVoucherId": 0,
-      "status": "preparing",
-      "shipperId": 0,
-      "shipper": null,
+      "status": "completed",
+      "shipperId": 4,
+      "shipper": {
+        "id": 4,
+        "fullName": "Lê Văn Tài",
+        "phone": "0933444555",
+        "vehicle": "Honda Wave Alpha",
+        "plate": "29X1-123.45",
+        "rating": 4.9
+      },
       "reviewed": false,
       "createdAt": "2026-11-02T17:04:21.925Z",
       "history": [
@@ -5654,9 +5709,99 @@
         {
           "status": "preparing",
           "at": "2026-11-02T17:06:17.606Z"
+        },
+        {
+          "status": "picking",
+          "at": "2026-11-10T03:45:23.396Z"
+        },
+        {
+          "status": "delivering",
+          "at": "2026-11-10T03:45:25.867Z"
+        },
+        {
+          "status": "completed",
+          "at": "2026-11-10T03:45:27.583Z"
         }
       ],
       "id": 5
+    },
+    {
+      "code": "SF77469329",
+      "userId": 9,
+      "restaurantId": 12,
+      "restaurantName": "Gà Nướng Mật Ong 79",
+      "restaurantAddress": "68 Phố Nguyễn Thái Học, Cửa Nam, Hà Nội",
+      "restaurantIcon": "🍗",
+      "restaurantLat": 21.028266,
+      "restaurantLng": 105.843404,
+      "distanceKm": 8.9,
+      "prepTime": 20,
+      "customerName": "Trần Trung Hiếu",
+      "phone": "0983836624",
+      "address": "Siêu thị Dos Mark, Đường Cầu Diễn, Phường Xuân Phương, Hà Nội",
+      "deliveryLat": 21.042386068280038,
+      "deliveryLng": 105.75865187559313,
+      "note": "",
+      "paymentMethod": "cod",
+      "items": [
+        {
+          "foodId": 71,
+          "name": "Gà rán (3 miếng)",
+          "price": 99000,
+          "icon": "🍗",
+          "image": "/images/foods/fried-chicken.jpg",
+          "quantity": 1
+        },
+        {
+          "foodId": 70,
+          "name": "Đùi gà quay mật ong",
+          "price": 61000,
+          "icon": "🍗",
+          "image": "/images/foods/roast-chicken-leg.jpg",
+          "quantity": 1
+        }
+      ],
+      "subtotal": 160000,
+      "shippingFee": 45000,
+      "discount": 16000,
+      "total": 189000,
+      "voucherCode": "WELCOME10",
+      "userVoucherId": 4,
+      "status": "completed",
+      "shipperId": 4,
+      "shipper": {
+        "id": 4,
+        "fullName": "Lê Văn Tài",
+        "phone": "0933444555",
+        "vehicle": "Honda Wave Alpha",
+        "plate": "29X1-123.45",
+        "rating": 4.9
+      },
+      "reviewed": false,
+      "createdAt": "2026-11-10T02:24:29.329Z",
+      "history": [
+        {
+          "status": "pending",
+          "at": "2026-11-10T02:24:29.329Z"
+        },
+        {
+          "status": "preparing",
+          "at": "2026-11-10T02:25:50.699Z"
+        },
+        {
+          "status": "picking",
+          "at": "2026-11-10T02:35:31.304Z"
+        },
+        {
+          "status": "delivering",
+          "at": "2026-11-10T02:36:16.975Z"
+        },
+        {
+          "status": "completed",
+          "at": "2026-11-10T03:39:42.605Z"
+        }
+      ],
+      "id": 6
     }
   ],
   "reviews": [

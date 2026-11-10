@@ -147,31 +147,31 @@ export default function OrderManager({ restaurantId, role }) {
           </div>
           <div className="items-box small">
             {o.items.map((i) => <div key={i.foodId}>{i.quantity}× {i.name}</div>)}
-            {o.note && <div className="text-error">📝 {o.note}</div>}
+            {o.note && <div className="text-error">{o.note}</div>}
           </div>
-          {o.shipper && <p className="small">🛵 Tài xế: {o.shipper.fullName} · {o.shipper.phone} · {o.shipper.plate}</p>}
+          {o.shipper && <p className="small">Tài xế: {o.shipper.fullName} · {o.shipper.phone} · {o.shipper.plate}</p>}
           {o.cancelReason && <p className="small text-error">Lý do hủy: {o.cancelReason}</p>}
           {isAdmin && (
             <div className="admin-tools small">
-              <span>⚡ Quyền admin:</span>
+              <span>Admin:</span>
               {['preparing', 'picking', 'delivering'].includes(o.status) && (
                 <select className="input input-sm" value={o.shipperId || ''}
                   onChange={(e) => run(() => assignShipper(o, Number(e.target.value)), 'Đã gán tài xế')}>
-                  <option value="" disabled>🛵 Gán tài xế...</option>
+                  <option value="" disabled>Gán tài xế...</option>
                   {shippers.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.online ? '🟢' : '⚪'} {s.fullName} · {s.plate}
+                      {s.online ? 'Online' : 'Offline'} · {s.fullName} · {s.plate}
                     </option>
                   ))}
                 </select>
               )}
               <select className="input input-sm" value="" onChange={(e) => changeStatus(o, e.target.value)}>
-                <option value="">🔀 Đổi trạng thái...</option>
+                <option value="">Đổi trạng thái...</option>
                 {Object.entries(ORDER_STATUS)
                   .filter(([k]) => k !== o.status)
                   .map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
               </select>
-              <button className="btn btn-danger btn-sm" onClick={() => remove(o)}>🗑 Xóa đơn</button>
+              <button className="btn btn-danger btn-sm" onClick={() => remove(o)}>Xóa đơn</button>
             </div>
           )}
           <div className="card-head">
@@ -184,8 +184,8 @@ export default function OrderManager({ restaurantId, role }) {
               {o.status === 'pending' && (
                 <>
                   <button className="btn btn-danger btn-sm" onClick={() => reject(o)}>Từ chối</button>
-                  <button className="btn btn-primary btn-sm" onClick={() => run(() => confirmOrder(o), `Đã nhận đơn #${o.code}, bắt đầu chuẩn bị`)}>
-                    ✅ Nhận đơn & chuẩn bị
+                  <button className="btn btn-primary btn-sm" onClick={() => run(() => confirmOrder(o), `Đã nhận đơn #${o.code}. Đang tìm tài xế.`)}>
+                    Nhận đơn
                   </button>
                 </>
               )}

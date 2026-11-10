@@ -4,6 +4,8 @@ import { useToast } from '../context/ToastContext.jsx';
 import Stars from '../components/Stars.jsx';
 import { ROLES } from '../utils.js';
 
+const PHONE_REGEX = /^0\d{9}$/;
+
 export default function Profile() {
   const { user, updateProfile } = useAuth();
   const toast = useToast();
@@ -20,6 +22,7 @@ export default function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!PHONE_REGEX.test(form.phone.trim())) return toast('Số điện thoại phải gồm 10 số, bắt đầu bằng 0', 'error');
     setSaving(true);
     try {
       await updateProfile(form);
@@ -34,7 +37,7 @@ export default function Profile() {
   return (
     <div className="auth-box card">
       <h2>Thông tin cá nhân</h2>
-      <p className="muted small">{user.email} · <span className="tag">{ROLES[user.role]}</span></p>
+      <p className="muted small">{user.username ? `@${user.username} · ` : ''}{user.email} · <span className="tag">{ROLES[user.role]}</span>{user.googleId ? ' · Google' : ''}</p>
       {isShipper && <p><Stars value={user.rating} count={user.ratingCount} /></p>}
       <form className="form" onSubmit={handleSubmit}>
         <label>Họ và tên<input className="input" required value={form.fullName} onChange={set('fullName')} /></label>

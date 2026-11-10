@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../../api.js';
+import { useToast } from '../../context/ToastContext.jsx';
 import StatusBadge from '../../components/StatusBadge.jsx';
 import { formatPrice, isToday, ORDER_STATUS } from '../../utils.js';
 
 export default function Dashboard() {
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
-  const [error, setError] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     Promise.all([api.get('/orders'), api.get('/users')])
@@ -14,8 +15,8 @@ export default function Dashboard() {
         setOrders(o);
         setUsers(u);
       })
-      .catch((e) => setError(e.message));
-  }, []);
+      .catch((e) => toast(e.message, 'error'));
+  }, [toast]);
 
   const stats = useMemo(() => {
     const completed = orders.filter((o) => o.status === 'completed');
@@ -39,8 +40,6 @@ export default function Dashboard() {
       customers: users.filter((u) => u.role === 'customer').length,
     };
   }, [orders, users]);
-
-  if (error) return <div className="alert alert-error">{error}</div>;
 
   return (
     <div>

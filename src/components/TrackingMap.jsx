@@ -32,7 +32,7 @@ export default function TrackingMap({ order }) {
       eta = new Date(new Date(order.createdAt).getTime() + (order.prepTime + travel + 2) * 60000);
       break;
     case 'preparing':
-      message = 'Quán đang chuẩn bị món · Đang tìm tài xế gần bạn...';
+      message = 'Đang chuẩn bị · tìm tài xế...';
       eta = new Date(reachedAt(order, 'preparing') + (order.prepTime + travel) * 60000);
       break;
     case 'picking': {
@@ -91,14 +91,14 @@ export default function TrackingMap({ order }) {
       <div className="road">
         <div className="road-line" />
         <div className="road-progress" style={{ width: (bikePos ?? 0) + '%' }} />
-        <div className="pin" style={{ left: SHOP_POS + '%' }} title={order.restaurantName}>
-          🏪<span>{order.restaurantName}</span>
+        <div className="pin pin-label" style={{ left: SHOP_POS + '%' }} title={order.restaurantName}>
+          <b>Q</b><span>{order.restaurantName}</span>
         </div>
-        <div className="pin" style={{ left: '100%' }} title={order.address}>
-          🏠<span>Bạn</span>
+        <div className="pin pin-label" style={{ left: '100%' }} title={order.address}>
+          <b>B</b><span>Bạn</span>
         </div>
         {bikePos !== null && (
-          <div className="bike" style={{ left: bikePos + '%' }}>🛵</div>
+          <div className="bike" style={{ left: bikePos + '%' }} />
         )}
         {order.status === 'preparing' && !order.shipperId && <div className="radar" style={{ left: SHOP_POS + '%' }} />}
       </div>

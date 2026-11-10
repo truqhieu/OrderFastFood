@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
-import useAddToCart from '../hooks/useAddToCart.js';
 import useSearchHistory from '../hooks/useSearchHistory.js';
 import useDeliveryLocation from '../hooks/useDeliveryLocation.js';
 import { deliveryDistance } from '../geo.js';
@@ -9,6 +8,7 @@ import FoodImage from '../components/FoodImage.jsx';
 import Icon from '../components/Icon.jsx';
 import Pagination from '../components/Pagination.jsx';
 import Stars from '../components/Stars.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import { discountPercent, estimateMinutes, formatPrice, isExpired, normalizeText, paginate, voucherLabel } from '../utils.js';
 
 const PAGE_SIZE = 8;
@@ -29,7 +29,6 @@ function Highlight({ text, keyword }) {
 export default function Search() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const addToCart = useAddToCart();
   const { history, add, remove, clear } = useSearchHistory();
   const [location] = useDeliveryLocation();
   const inputRef = useRef(null);
@@ -47,13 +46,13 @@ export default function Search() {
   const [text, setText] = useState(q);
   const [editing, setEditing] = useState(!hasQuery);
   const [data, setData] = useState({ restaurants: [], foods: [], categories: [], vouchers: [] });
-  const [error, setError] = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     Promise.all([api.get('/restaurants'), api.get('/foods'), api.get('/categories'), api.get('/vouchers?active=true')])
       .then(([restaurants, foods, categories, vouchers]) => setData({ restaurants, foods, categories, vouchers }))
-      .catch((e) => setError(e.message));
-  }, []);
+      .catch((e) => toast(e.message, 'error'));
+  }, [toast]);
 
   useEffect(() => {
     setText(q);
@@ -159,8 +158,6 @@ export default function Search() {
         <button className="btn btn-primary">Tìm</button>
       </form>
 
-      {error && <div className="alert alert-error">{error}</div>}
-
       {editing ? (
         <div className="card search-panel">
           {text.trim() ? (
@@ -263,7 +260,7 @@ export default function Search() {
                 {r.dishes.slice(0, 8).map((f) => {
                   const off = discountPercent(f);
                   return (
-                    <div key={f.id} className={`dish ${f.available ? '' : 'disabled'}`} onClick={() => navigate(`/restaurants/${r.id}`)}>
+                    <Link key={f.id} to={`/restaurants/${r.id}?dish=${f.id}`} className={`dish ${f.available ? '' : 'disabled'}`}>
                       <div className="dish-img">
                         <FoodImage food={f} size="dish" />
                         {off > 0 && <span className="off-badge">-{off}%</span>}
@@ -274,15 +271,12 @@ export default function Search() {
                           <b className="price">{formatPrice(f.price)}</b>
                           {off > 0 && <s className="muted small"> {formatPrice(f.originalPrice)}</s>}
                         </span>
-                        {f.available && r.isOpen && (
-                          <button className="add-btn sm" onClick={(e) => { e.stopPropagation(); addToCart(f, r); }}>+</button>
-                        )}
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
                 {r.dishes.length > 8 && (
-                  <Link to={`/restaurants/${r.id}`} className="dish more">Xem thêm {r.dishes.length - 8} món ›</Link>
+                  <Link to={`/restaurants/${r.id}`} className="dish more">Xem quán · {r.dishes.length - 8} món ›</Link>
                 )}
               </div>
             </div>

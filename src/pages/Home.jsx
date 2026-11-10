@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
-import useAddToCart from '../hooks/useAddToCart.js';
 import useDeliveryLocation from '../hooks/useDeliveryLocation.js';
 import { useLocationContext } from '../context/LocationContext.jsx';
 import FoodTile from '../components/FoodTile.jsx';
@@ -9,6 +8,7 @@ import Icon from '../components/Icon.jsx';
 import LocationPicker from '../components/LocationPicker.jsx';
 import { deliveryDistance } from '../geo.js';
 import Pagination from '../components/Pagination.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import { discountPercent, estimateMinutes, isExpired, paginate, voucherLabel } from '../utils.js';
 
 const SUGGEST_PAGE_SIZE = 12;
@@ -35,11 +35,10 @@ function useCountdownToMidnight() {
 
 export default function Home() {
   const navigate = useNavigate();
-  const addToCart = useAddToCart();
   const countdown = useCountdownToMidnight();
   const [data, setData] = useState({ categories: [], foods: [], restaurants: [], vouchers: [] });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const toast = useToast();
   const [banner, setBanner] = useState(0);
   const [page, setPage] = useState(1);
   const [suggestTab, setSuggestTab] = useState(0);
@@ -51,7 +50,7 @@ export default function Home() {
   useEffect(() => {
     Promise.all([api.get('/categories'), api.get('/foods'), api.get('/restaurants'), api.get('/vouchers?active=true')])
       .then(([categories, foods, restaurants, vouchers]) => setData({ categories, foods, restaurants, vouchers }))
-      .catch((e) => setError(e.message))
+      .catch((e) => toast(e.message, 'error'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -153,7 +152,6 @@ export default function Home() {
         ))}
       </section>
 
-      {error && <div className="alert alert-error">{error}</div>}
       {loading && <p className="muted center">Đang tải...</p>}
 
       {saleFoods.length > 0 && (
@@ -167,7 +165,7 @@ export default function Home() {
           </div>
           <div className="h-scroll">
             {saleFoods.slice(0, FLASH_SALE_LIMIT).map((f) => (
-              <FoodTile key={f.id} food={f} restaurant={shopById.get(f.restaurantId)} onAdd={addToCart} showSoldBar />
+              <FoodTile key={f.id} food={f} restaurant={shopById.get(f.restaurantId)} showSoldBar />
             ))}
             {saleFoods.length > FLASH_SALE_LIMIT && (
               <Link to="/search?sale=1" className="see-more-tile">
@@ -217,7 +215,7 @@ export default function Home() {
           {suggestedInTab.length === 0 && <p className="muted center">Danh mục này hiện chưa có món đang bán.</p>}
           <div className="tile-grid">
             {paginate(suggestedInTab, Math.min(page, totalPages), SUGGEST_PAGE_SIZE).map((f) => (
-              <FoodTile key={f.id} food={f} restaurant={shopById.get(f.restaurantId)} onAdd={addToCart} />
+              <FoodTile key={f.id} food={f} restaurant={shopById.get(f.restaurantId)} />
             ))}
           </div>
           <Pagination page={Math.min(page, totalPages)} totalPages={totalPages} total={suggestedInTab.length}

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import usePaged from '../hooks/usePaged.js';
 import Pagination from '../components/Pagination.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
@@ -15,10 +16,15 @@ const TABS = {
 
 export default function Orders() {
   const { user } = useAuth();
+  const toast = useToast();
   const [tab, setTab] = useState('active');
   const paged = usePaged(`/orders?userId=${user.id}&${TABS[tab].query}&_sort=createdAt&_order=desc`, 5, {
     pollMs: tab === 'active' ? 8000 : 0,
   });
+
+  useEffect(() => {
+    if (paged.error) toast(paged.error, 'error');
+  }, [paged.error, toast]);
 
   return (
     <div>
@@ -30,10 +36,8 @@ export default function Orders() {
       </div>
 
       {paged.loading && <p className="muted center">Đang tải...</p>}
-      {paged.error && <div className="alert alert-error">{paged.error}</div>}
       {!paged.loading && paged.data.length === 0 && (
         <div className="empty card">
-          <div className="empty-icon">📦</div>
           <p className="muted">Không có đơn hàng nào.</p>
           <Link to="/" className="btn btn-primary">Đặt món ngay</Link>
         </div>
