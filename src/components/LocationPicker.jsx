@@ -19,6 +19,22 @@ function MapBinder({ mapRef, onMoveStart, onMoveEnd }) {
   return <LeafletFix />;
 }
 
+function PlaceSearchResults({ results, searching, query, onSelect }) {
+  if (!(results.length > 0 || (searching && query.trim().length >= 3))) return null;
+
+  return (
+    <div className="picker-results">
+      {searching && results.length === 0 && <div className="muted small picker-result">Đang tìm...</div>}
+      {results.map((place, index) => (
+        <button type="button" key={index} className="picker-result" onClick={() => onSelect(place)}>
+          <Icon name="pin" size={16} className="muted" />
+          <span><b>{place.name}</b><small className="muted">{place.address}</small></span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Full-screen picker: drag the map under a fixed pin, search an address, or use the device location. */
 export default function LocationPicker({ initial, restaurant, onClose, onConfirm }) {
   const mapRef = useRef(null);
@@ -116,17 +132,7 @@ export default function LocationPicker({ initial, restaurant, onClose, onConfirm
           <Icon name="search" size={16} className="muted" />
           <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm đường, toà nhà, địa điểm..." />
           {query && <button type="button" className="icon-btn" onClick={() => setQuery('')} aria-label="Xóa tìm kiếm"><Icon name="close" size={16} /></button>}
-          {(results.length > 0 || (searching && query.trim().length >= 3)) && (
-            <div className="picker-results">
-              {searching && results.length === 0 && <div className="muted small picker-result">Đang tìm...</div>}
-              {results.map((p, i) => (
-                <button type="button" key={i} className="picker-result" onClick={() => choose(p)}>
-                  <Icon name="pin" size={16} className="muted" />
-                  <span><b>{p.name}</b><small className="muted">{p.address}</small></span>
-                </button>
-              ))}
-            </div>
-          )}
+          <PlaceSearchResults results={results} searching={searching} query={query} onSelect={choose} />
         </div>
 
         <div className="picker-map">
