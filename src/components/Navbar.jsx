@@ -4,6 +4,26 @@ import { useCart } from '../context/CartContext.jsx';
 import Icon from './Icon.jsx';
 import { ROLES } from '../utils.js';
 
+function AccountLinks({ user, onLogout }) {
+  if (user) {
+    return (
+      <>
+        <NavLink to="/profile" className="user-name" title={ROLES[user.role]}>
+          <Icon name="user" size={16} /> {user.fullName}
+        </NavLink>
+        <button className="btn btn-ghost btn-sm" onClick={onLogout}>Đăng xuất</button>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <NavLink to="/login">Đăng nhập</NavLink>
+      <Link to="/register" className="btn btn-light btn-sm">Đăng ký</Link>
+    </>
+  );
+}
+
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { count } = useCart();
@@ -37,19 +57,7 @@ export default function Navbar() {
           {role === 'shipper' && <NavLink to="/shipper">Nhận đơn</NavLink>}
           {role === 'merchant' && <NavLink to="/merchant">Quản lý quán</NavLink>}
           {role === 'admin' && <NavLink to="/admin">Quản trị</NavLink>}
-          {user ? (
-            <>
-              <NavLink to="/profile" className="user-name" title={ROLES[user.role]}>
-                <Icon name="user" size={16} /> {user.fullName}
-              </NavLink>
-              <button className="btn btn-ghost btn-sm" onClick={handleLogout}>Đăng xuất</button>
-            </>
-          ) : (
-            <>
-              <NavLink to="/login">Đăng nhập</NavLink>
-              <Link to="/register" className="btn btn-light btn-sm">Đăng ký</Link>
-            </>
-          )}
+          <AccountLinks user={user} onLogout={handleLogout} />
         </nav>
       </div>
     </header>
