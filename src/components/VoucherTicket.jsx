@@ -1,5 +1,13 @@
 import { formatPrice, voucherLabel } from '../utils.js';
 
+function VoucherProgress({ percentUsed }) {
+  return (
+    <div className="ticket-progress" title={`Đã dùng ${percentUsed}%`}>
+      <div style={{ width: percentUsed + '%' }} />
+    </div>
+  );
+}
+
 export default function VoucherTicket({ voucher, restaurantName, children, dimmed, note }) {
   const remaining = Math.max(voucher.quantity - voucher.claimed, 0);
   const percentUsed = Math.min(100, Math.round((voucher.claimed / voucher.quantity) * 100));
@@ -13,9 +21,7 @@ export default function VoucherTicket({ voucher, restaurantName, children, dimme
         <strong>{voucherLabel(voucher)}</strong>
         <span className="small">Đơn tối thiểu {formatPrice(voucher.minOrder)}</span>
         {restaurantName && <span className="small muted">Áp dụng: {restaurantName}</span>}
-        <div className="ticket-progress" title={`Đã dùng ${percentUsed}%`}>
-          <div style={{ width: percentUsed + '%' }} />
-        </div>
+        <VoucherProgress percentUsed={percentUsed} />
         <span className="small muted">
           Mã {voucher.code} · Còn {remaining} lượt · HSD {new Date(voucher.expiresAt).toLocaleDateString('vi-VN')}
         </span>
