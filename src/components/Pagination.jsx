@@ -9,20 +9,26 @@ function pageItems(page, totalPages) {
   return result;
 }
 
+function PageItem({ item, page, onChange }) {
+  if (typeof item === 'string') {
+    return <span className="ellipsis">…</span>;
+  }
+
+  return (
+    <button className={item === page ? 'active' : ''} onClick={() => onChange(item)}>
+      {item}
+    </button>
+  );
+}
+
 export default function Pagination({ page, totalPages, onChange, total }) {
   if (totalPages <= 1) return null;
   return (
     <div className="pagination">
       <button disabled={page === 1} onClick={() => onChange(page - 1)}>‹</button>
-      {pageItems(page, totalPages).map((p) =>
-        typeof p === 'string' ? (
-          <span key={p} className="ellipsis">…</span>
-        ) : (
-          <button key={p} className={p === page ? 'active' : ''} onClick={() => onChange(p)}>
-            {p}
-          </button>
-        )
-      )}
+      {pageItems(page, totalPages).map((item) => (
+        <PageItem key={item} item={item} page={page} onChange={onChange} />
+      ))}
       <button disabled={page === totalPages} onClick={() => onChange(page + 1)}>›</button>
       {total !== undefined && <span className="muted small">{total} kết quả</span>}
     </div>
