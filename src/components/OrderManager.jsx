@@ -11,6 +11,32 @@ import { formatDate, formatPrice, ORDER_STATUS, PAYMENT_METHODS } from '../utils
 
 const POLL_MS = 8000;
 
+function OrderAdminTools({ order, shippers, onAssignShipper, onChangeStatus, onRemove }) {
+  return (
+    <div className="admin-tools small">
+      <span>Admin:</span>
+      {['preparing', 'picking', 'delivering'].includes(order.status) && (
+        <select className="input input-sm" value={order.shipperId || ''}
+          onChange={(e) => onAssignShipper(order, Number(e.target.value))}>
+          <option value="" disabled>Gán tài xế...</option>
+          {shippers.map((shipper) => (
+            <option key={shipper.id} value={shipper.id}>
+              {shipper.online ? 'Online' : 'Offline'} · {shipper.fullName} · {shipper.plate}
+            </option>
+          ))}
+        </select>
+      )}
+      <select className="input input-sm" value="" onChange={(e) => onChangeStatus(order, e.target.value)}>
+        <option value="">Đổi trạng thái...</option>
+        {Object.entries(ORDER_STATUS)
+          .filter(([key]) => key !== order.status)
+          .map(([key, status]) => <option key={key} value={key}>{status.label}</option>)}
+      </select>
+      <button className="btn btn-danger btn-sm" onClick={() => onRemove(order)}>Xóa đơn</button>
+    </div>
+  );
+}
+
 /** Order queue for a merchant (fixed restaurantId) or admin (all restaurants, filterable). */
 export default function OrderManager({ restaurantId, role }) {
   const toast = useToast();
@@ -152,27 +178,13 @@ export default function OrderManager({ restaurantId, role }) {
           {o.shipper && <p className="small">Tài xế: {o.shipper.fullName} · {o.shipper.phone} · {o.shipper.plate}</p>}
           {o.cancelReason && <p className="small text-error">Lý do hủy: {o.cancelReason}</p>}
           {isAdmin && (
-            <div className="admin-tools small">
-              <span>Admin:</span>
-              {['preparing', 'picking', 'delivering'].includes(o.status) && (
-                <select className="input input-sm" value={o.shipperId || ''}
-                  onChange={(e) => run(() => assignShipper(o, Number(e.target.value)), 'Đã gán tài xế')}>
-                  <option value="" disabled>Gán tài xế...</option>
-                  {shippers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.online ? 'Online' : 'Offline'} · {s.fullName} · {s.plate}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <select className="input input-sm" value="" onChange={(e) => changeStatus(o, e.target.value)}>
-                <option value="">Đổi trạng thái...</option>
-                {Object.entries(ORDER_STATUS)
-                  .filter(([k]) => k !== o.status)
-                  .map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
-              </select>
-              <button className="btn btn-danger btn-sm" onClick={() => remove(o)}>Xóa đơn</button>
-            </div>
+            <OrderAdminTools
+              order={o}
+              shippers={shippers}
+              onAssignShipper={(order, shipperId) => run(() => assignShipper(order, shipperId), 'Đã gán tài xế')}
+              onChangeStatus={changeStatus}
+              onRemove={remove}
+            />
           )}
           <div className="card-head">
             <span>
