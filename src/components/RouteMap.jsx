@@ -25,6 +25,19 @@ function FitBounds({ bounds }) {
   return null;
 }
 
+function getShipperPosition(shipper, from, path) {
+  if (shipper?.leg === 'pickup') {
+    const start = [from.lat + PICKUP_OFFSET.lat, from.lng + PICKUP_OFFSET.lng];
+    return pointAlong([start, [from.lat, from.lng]], shipper.ratio);
+  }
+
+  if (shipper?.leg === 'deliver') {
+    return pointAlong(path, shipper.ratio);
+  }
+
+  return null;
+}
+
 /**
  * Restaurant → customer route on a real map.
  * `shipper` = { leg: 'pickup' | 'deliver', ratio: 0..1 } places the driver on the way to the shop or along the route.
@@ -42,14 +55,7 @@ export default function RouteMap({ from, to, shipper, height = 220, interactive 
 
   const bounds = useMemo(() => L.latLngBounds([[from.lat, from.lng], [to.lat, to.lng]]), [from.lat, from.lng, to.lat, to.lng]);
   const path = route || [[from.lat, from.lng], [to.lat, to.lng]];
-
-  let shipperPos = null;
-  if (shipper?.leg === 'pickup') {
-    const start = [from.lat + PICKUP_OFFSET.lat, from.lng + PICKUP_OFFSET.lng];
-    shipperPos = pointAlong([start, [from.lat, from.lng]], shipper.ratio);
-  } else if (shipper?.leg === 'deliver') {
-    shipperPos = pointAlong(path, shipper.ratio);
-  }
+  const shipperPos = getShipperPosition(shipper, from, path);
 
   return (
     <MapContainer className="route-map" style={{ height, width: '100%' }} bounds={bounds} boundsOptions={{ padding: [30, 30] }}
