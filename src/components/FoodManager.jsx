@@ -9,6 +9,38 @@ import { formatPrice } from '../utils.js';
 
 const EMPTY = { name: '', section: '', price: '', originalPrice: '', icon: '🍔', image: '', description: '', available: true, restaurantId: '' };
 
+function FoodFormModal({ form, restaurantId, restaurants, onClose, onChange, onSubmit }) {
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={onSubmit}>
+        <h3>{form.id ? 'Sửa món' : 'Thêm món mới'}</h3>
+        {!restaurantId && (
+          <label>Quán
+            <select className="input" value={form.restaurantId} onChange={onChange('restaurantId')}>
+              <option value="">-- Chọn quán --</option>
+              {restaurants.map((restaurant) => <option key={restaurant.id} value={restaurant.id}>{restaurant.name}</option>)}
+            </select>
+          </label>
+        )}
+        <label>Tên món<input className="input" value={form.name} onChange={onChange('name')} /></label>
+        <div className="row">
+          <label>Nhóm món<input className="input" placeholder="Món chính, Đồ uống..." value={form.section} onChange={onChange('section')} /></label>
+          <label>Giá bán (đ)<input className="input" type="number" min="1000" step="1000" value={form.price} onChange={onChange('price')} /></label>
+          <label>Giá gốc (nếu sale)<input className="input" type="number" min="0" step="1000" value={form.originalPrice || ''} onChange={onChange('originalPrice')} /></label>
+          <label>Icon<input className="input" value={form.icon} onChange={onChange('icon')} /></label>
+        </div>
+        <label>Link ảnh (không bắt buộc)<input className="input" value={form.image} onChange={onChange('image')} placeholder="https://..." /></label>
+        <label>Mô tả<textarea className="input" rows={2} value={form.description} onChange={onChange('description')} /></label>
+        <label className="radio"><input type="checkbox" checked={form.available} onChange={onChange('available')} /> Đang bán</label>
+        <div className="actions">
+          <button type="button" className="btn btn-ghost" onClick={onClose}>Hủy</button>
+          <button className="btn btn-primary">Lưu</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 /** Menu CRUD for a merchant (fixed restaurantId) or admin (pick restaurant). */
 export default function FoodManager({ restaurantId }) {
   const toast = useToast();
@@ -83,33 +115,14 @@ export default function FoodManager({ restaurantId }) {
       </div>
 
       {form && (
-        <div className="modal-backdrop" onClick={() => setForm(null)}>
-          <form className="card modal form" onClick={(e) => e.stopPropagation()} onSubmit={save}>
-            <h3>{form.id ? 'Sửa món' : 'Thêm món mới'}</h3>
-            {!restaurantId && (
-              <label>Quán
-                <select className="input" value={form.restaurantId} onChange={set('restaurantId')}>
-                  <option value="">-- Chọn quán --</option>
-                  {restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                </select>
-              </label>
-            )}
-            <label>Tên món<input className="input" value={form.name} onChange={set('name')} /></label>
-            <div className="row">
-              <label>Nhóm món<input className="input" placeholder="Món chính, Đồ uống..." value={form.section} onChange={set('section')} /></label>
-              <label>Giá bán (đ)<input className="input" type="number" min="1000" step="1000" value={form.price} onChange={set('price')} /></label>
-              <label>Giá gốc (nếu sale)<input className="input" type="number" min="0" step="1000" value={form.originalPrice || ''} onChange={set('originalPrice')} /></label>
-              <label>Icon<input className="input" value={form.icon} onChange={set('icon')} /></label>
-            </div>
-            <label>Link ảnh (không bắt buộc)<input className="input" value={form.image} onChange={set('image')} placeholder="https://..." /></label>
-            <label>Mô tả<textarea className="input" rows={2} value={form.description} onChange={set('description')} /></label>
-            <label className="radio"><input type="checkbox" checked={form.available} onChange={set('available')} /> Đang bán</label>
-            <div className="actions">
-              <button type="button" className="btn btn-ghost" onClick={() => setForm(null)}>Hủy</button>
-              <button className="btn btn-primary">Lưu</button>
-            </div>
-          </form>
-        </div>
+        <FoodFormModal
+          form={form}
+          restaurantId={restaurantId}
+          restaurants={restaurants}
+          onClose={() => setForm(null)}
+          onChange={set}
+          onSubmit={save}
+        />
       )}
 
       <div className="card">
