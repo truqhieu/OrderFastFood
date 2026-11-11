@@ -10,17 +10,7 @@ const reachedAt = (order, status) => {
   return h ? new Date(h.at).getTime() : null;
 };
 
-/** Simulated live map: shipper moves to the shop, then from the shop to the customer. */
-export default function TrackingMap({ order }) {
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    if (!['picking', 'delivering'].includes(order.status)) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [order.status]);
-
-  const travel = deliveryMinutes(order.distanceKm || 1);
+function getTrackingState(order, now, travel) {
   let bikePos = null;
   let shipper = null;
   let message = '';
@@ -49,7 +39,7 @@ export default function TrackingMap({ order }) {
       const ratio = Math.min((now - start) / (travel * 60000), 0.95);
       bikePos = SHOP_POS + ratio * (100 - SHOP_POS);
       shipper = { leg: 'deliver', ratio };
-      message = `Tài xế đang trên đường giao đến bạn`;
+      message = 'Tài xế đang trên đường giao đến bạn';
       eta = new Date(start + travel * 60000);
       break;
     }
@@ -60,6 +50,22 @@ export default function TrackingMap({ order }) {
     default:
       message = 'Đơn hàng đã bị hủy';
   }
+
+  return { bikePos, shipper, message, eta };
+}
+
+/** Simulated live map: shipper moves to the shop, then from the shop to the customer. */
+export default function TrackingMap({ order }) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!['picking', 'delivering'].includes(order.status)) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [order.status]);
+
+  const travel = deliveryMinutes(order.distanceKm || 1);
+  const { bikePos, shipper, message, eta } = getTrackingState(order, now, travel);
 
   const head = (
     <div className="map-head">
